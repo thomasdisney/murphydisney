@@ -44,7 +44,7 @@ function canFallbackToMemory(error) {
 }
 
 function shouldUseMemoryFallback(error) {
-  return process.env.NODE_ENV !== 'production' && canFallbackToMemory(error);
+  return canFallbackToMemory(error);
 }
 
 function logDbFallback(context, error) {
