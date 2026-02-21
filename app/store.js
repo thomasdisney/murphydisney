@@ -8,7 +8,14 @@ if (!globalForStore.__murphyMessages) {
 }
 
 function listMemoryMessages() {
-  return [...globalForStore.__murphyMessages];
+  return [...globalForStore.__murphyMessages].sort((a, b) => {
+    const createdAtOrder = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    if (createdAtOrder !== 0) {
+      return createdAtOrder;
+    }
+
+    return a.id - b.id;
+  });
 }
 
 function createMemoryMessage(content, authorToken) {
@@ -36,6 +43,10 @@ function canFallbackToMemory(error) {
   );
 }
 
+function shouldUseMemoryFallback(error) {
+  return process.env.NODE_ENV !== 'production' && canFallbackToMemory(error);
+}
+
 function logDbFallback(context, error) {
   console.error(`[store] Falling back to in-memory storage during ${context}.`, {
     code: error?.code,
@@ -52,12 +63,12 @@ export async function listMessages() {
     const result = await pool.query(
       `SELECT id, content, author_token AS "authorToken", created_at AS "createdAt"
        FROM messages
-       ORDER BY created_at ASC`
+       ORDER BY created_at ASC, id ASC`
     );
 
     return result.rows;
   } catch (error) {
-    if (canFallbackToMemory(error)) {
+    if (shouldUseMemoryFallback(error)) {
       logDbFallback('listMessages', error);
       return listMemoryMessages();
     }
@@ -81,7 +92,7 @@ export async function createMessage(content, authorToken) {
 
     return result.rows[0];
   } catch (error) {
-    if (canFallbackToMemory(error)) {
+    if (shouldUseMemoryFallback(error)) {
       logDbFallback('createMessage', error);
       return createMemoryMessage(content, authorToken);
     }

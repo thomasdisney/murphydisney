@@ -1,6 +1,6 @@
 # MurphyDisney Forever Messages
 
-A one-page, mobile-first message wall where friends and family can post messages that are permanently stored in a database.
+A one-page, mobile-first message wall where friends and family can post messages that are stored in Neon Postgres and shown to every visitor in chronological order.
 
 ## Stack
 
@@ -24,7 +24,7 @@ POSTGRES_URL="postgresql://<user>:<password>@<host>/<database>?sslmode=require"
 IP_SALT="choose-a-random-secret-string"
 ```
 
-Or discrete vars (with your provided DB name default):
+Or discrete vars:
 
 ```bash
 POSTGRES_HOST="..."
@@ -47,17 +47,31 @@ npm run db:init
 npm run dev
 ```
 
-## Deploy on Vercel
+## Vercel + NeonDB setup (production persistence)
 
-1. Import this repo into Vercel.
-2. Attach your Postgres/Neon database.
-3. Set either `POSTGRES_URL` **or** the discrete `POSTGRES_*` vars above.
-4. Set `IP_SALT` to a random secret.
-5. Run `npm run db:init` once (or run equivalent SQL in Vercel SQL console).
+1. In Vercel, open your project and go to **Storage**.
+2. Create or connect a **Neon Postgres** database.
+3. In **Project Settings → Environment Variables**, confirm these are present for Production/Preview:
+   - `POSTGRES_URL` (recommended) **or** `DATABASE_URL`
+   - `IP_SALT` (random secret string)
+4. Redeploy after variables are saved.
+5. Run schema initialization once against that database:
 
-## Notes
+```bash
+npm run db:init
+```
 
+   You can run this locally with the same `POSTGRES_URL`, or execute the SQL from `scripts/init-db.mjs` in the Vercel/Neon SQL console.
+
+6. Verify data persistence:
+   - Post a message in production.
+   - Refresh and open in another browser/session.
+   - Confirm the same message appears and retains order by `created_at` then `id`.
+
+## Behavior
+
+- Messages are persisted in Postgres in production; memory fallback is only used in non-production environments.
+- Messages are returned in chronological order (`created_at ASC, id ASC`) for consistent ordering.
+- Each message displays a Pacific time timestamp (`America/Los_Angeles`) with date and time.
 - No login is required.
 - Message color alignment is inferred from hashed IP token (best effort).
-- Messages are persisted in Postgres and shown to all users in chronological order.
-- iOS/Safari can restrict fully automatic keyboard open without interaction; the app still autofocuses input and keeps composer pinned above the keyboard area.

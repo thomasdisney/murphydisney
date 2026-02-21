@@ -108,6 +108,18 @@ body {
   border-bottom-left-radius: 0.4rem;
 }
 
+
+.bubble p {
+  margin: 0;
+}
+
+.bubble small {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  opacity: 0.78;
+}
+
 .empty {
   text-align: center;
   color: var(--muted);

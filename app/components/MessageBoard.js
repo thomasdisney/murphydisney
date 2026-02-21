@@ -6,6 +6,21 @@ function safeTrim(value) {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function formatPacificDateTime(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Unknown time';
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZoneName: 'short'
+  }).format(date);
+}
+
 export default function MessageBoard({ initialMessages, viewerToken }) {
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState('');
@@ -101,7 +116,10 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
             const isSelf = message.authorToken === viewerToken;
             return (
               <div className={`bubbleRow ${isSelf ? 'self' : ''}`} key={message.id}>
-                <div className={`bubble ${isSelf ? 'self' : 'other'}`}>{message.content}</div>
+                <div className={`bubble ${isSelf ? 'self' : 'other'}`}>
+                  <p>{message.content}</p>
+                  <small>{formatPacificDateTime(message.createdAt)}</small>
+                </div>
               </div>
             );
           })}
