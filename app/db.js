@@ -12,9 +12,7 @@ function getConnectionString() {
   const database = process.env.POSTGRES_DATABASE || 'neon-charcoal-kite';
 
   if (!host || !user || !password) {
-    throw new Error(
-      'Set POSTGRES_URL (or DATABASE_URL) OR set POSTGRES_HOST/POSTGRES_USER/POSTGRES_PASSWORD (optional POSTGRES_DATABASE, POSTGRES_PORT).'
-    );
+    return null;
   }
 
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}?sslmode=require`;
@@ -22,12 +20,18 @@ function getConnectionString() {
 
 const globalForDb = globalThis;
 
-export const pool =
-  globalForDb.__murphyPool ||
-  new Pool({
-    connectionString: getConnectionString()
-  });
+function createPool() {
+  const connectionString = getConnectionString();
 
-if (process.env.NODE_ENV !== 'production') {
+  if (!connectionString) {
+    return null;
+  }
+
+  return new Pool({ connectionString });
+}
+
+export const pool = globalForDb.__murphyPool ?? createPool();
+
+if (!globalForDb.__murphyPool) {
   globalForDb.__murphyPool = pool;
 }
