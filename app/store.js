@@ -23,18 +23,47 @@ function createMemoryMessage(content, authorToken) {
   return message;
 }
 
+function canFallbackToMemory(error) {
+  const code = error?.code;
+  return (
+    !code ||
+    code === '42P01' || // undefined_table
+    code === 'ECONNREFUSED' ||
+    code === 'ENOTFOUND' ||
+    code === 'ETIMEDOUT' ||
+    code === '57P01' || // admin_shutdown
+    code === '53300' // too_many_connections
+  );
+}
+
+function logDbFallback(context, error) {
+  console.error(`[store] Falling back to in-memory storage during ${context}.`, {
+    code: error?.code,
+    message: error?.message
+  });
+}
+
 export async function listMessages() {
   if (!pool) {
     return listMemoryMessages();
   }
 
-  const result = await pool.query(
-    `SELECT id, content, author_token AS "authorToken", created_at AS "createdAt"
-     FROM messages
-     ORDER BY created_at ASC`
-  );
+  try {
+    const result = await pool.query(
+      `SELECT id, content, author_token AS "authorToken", created_at AS "createdAt"
+       FROM messages
+       ORDER BY created_at ASC`
+    );
 
-  return result.rows;
+    return result.rows;
+  } catch (error) {
+    if (canFallbackToMemory(error)) {
+      logDbFallback('listMessages', error);
+      return listMemoryMessages();
+    }
+
+    throw error;
+  }
 }
 
 export async function createMessage(content, authorToken) {
@@ -42,12 +71,21 @@ export async function createMessage(content, authorToken) {
     return createMemoryMessage(content, authorToken);
   }
 
-  const result = await pool.query(
-    `INSERT INTO messages (content, author_token)
-     VALUES ($1, $2)
-     RETURNING id, content, author_token AS "authorToken", created_at AS "createdAt"`,
-    [content, authorToken]
-  );
+  try {
+    const result = await pool.query(
+      `INSERT INTO messages (content, author_token)
+       VALUES ($1, $2)
+       RETURNING id, content, author_token AS "authorToken", created_at AS "createdAt"`,
+      [content, authorToken]
+    );
 
-  return result.rows[0];
+    return result.rows[0];
+  } catch (error) {
+    if (canFallbackToMemory(error)) {
+      logDbFallback('createMessage', error);
+      return createMemoryMessage(content, authorToken);
+    }
+
+    throw error;
+  }
 }
