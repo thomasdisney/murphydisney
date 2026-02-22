@@ -1,4 +1,7 @@
+import dns from 'node:dns';
 import { Pool } from 'pg';
+
+dns.setDefaultResultOrder('ipv4first');
 
 function getConnectionString() {
   if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
@@ -66,9 +69,10 @@ export function getPool() {
 }
 
 const transientPgCodes = new Set(['40001', '40P01', '53300', '57P01', '57P02', '57P03']);
+const transientNetworkCodes = new Set(['ECONNRESET', 'ETIMEDOUT', 'EPIPE', 'ENETUNREACH', 'ECONNREFUSED', 'ENOTFOUND']);
 
 function isTransientError(error) {
-  return transientPgCodes.has(error?.code) || ['ECONNRESET', 'ETIMEDOUT', 'EPIPE'].includes(error?.code);
+  return transientPgCodes.has(error?.code) || transientNetworkCodes.has(error?.code);
 }
 
 function delay(ms) {
