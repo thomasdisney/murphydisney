@@ -111,7 +111,7 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
       <header className={`header ${compactHeader ? 'compact' : ''}`}>
         <h1 className="title">MurphyDisney.com</h1>
         <p className="instructions">
-          Leave a message for Murphy. Every post is saved forever and instantly appears for friends and family around the world.
+          type & send a message for Murphy. no edits, no take-backs. don't forget your name.
         </p>
       </header>
 
