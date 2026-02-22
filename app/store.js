@@ -1,102 +1,29 @@
-import { pool } from './db';
-
-const globalForStore = globalThis;
-
-if (!globalForStore.__murphyMessages) {
-  globalForStore.__murphyMessages = [];
-  globalForStore.__murphyMessageId = 1;
-}
-
-function listMemoryMessages() {
-  return [...globalForStore.__murphyMessages].sort((a, b) => {
-    const createdAtOrder = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    if (createdAtOrder !== 0) {
-      return createdAtOrder;
-    }
-
-    return a.id - b.id;
-  });
-}
-
-function createMemoryMessage(content, authorToken) {
-  const message = {
-    id: globalForStore.__murphyMessageId++,
-    content,
-    authorToken,
-    createdAt: new Date().toISOString()
-  };
-
-  globalForStore.__murphyMessages.push(message);
-  return message;
-}
-
-function canFallbackToMemory(error) {
-  const code = error?.code;
-  return (
-    !code ||
-    code === '42P01' || // undefined_table
-    code === 'ECONNREFUSED' ||
-    code === 'ENOTFOUND' ||
-    code === 'ETIMEDOUT' ||
-    code === '57P01' || // admin_shutdown
-    code === '53300' // too_many_connections
-  );
-}
-
-function shouldUseMemoryFallback(error) {
-  return canFallbackToMemory(error);
-}
-
-function logDbFallback(context, error) {
-  console.error(`[store] Falling back to in-memory storage during ${context}.`, {
-    code: error?.code,
-    message: error?.message
-  });
-}
+import { ensureSchema, queryWithRetry } from './db';
 
 export async function listMessages() {
-  if (!pool) {
-    return listMemoryMessages();
-  }
+  await ensureSchema();
 
-  try {
-    const result = await pool.query(
-      `SELECT id, content, author_token AS "authorToken", created_at AS "createdAt"
-       FROM messages
-       ORDER BY created_at ASC, id ASC`
-    );
+  const result = await queryWithRetry(
+    `SELECT id, content, author_token AS "authorToken", created_at AS "createdAt"
+     FROM messages
+     ORDER BY created_at ASC, id ASC`,
+    [],
+    { retries: 2 }
+  );
 
-    return result.rows;
-  } catch (error) {
-    if (shouldUseMemoryFallback(error)) {
-      logDbFallback('listMessages', error);
-      return listMemoryMessages();
-    }
-
-    throw error;
-  }
+  return result.rows;
 }
 
 export async function createMessage(content, authorToken) {
-  if (!pool) {
-    return createMemoryMessage(content, authorToken);
-  }
+  await ensureSchema();
 
-  try {
-    const result = await pool.query(
-      `INSERT INTO messages (content, author_token)
-       VALUES ($1, $2)
-       RETURNING id, content, author_token AS "authorToken", created_at AS "createdAt"`,
-      [content, authorToken]
-    );
+  const result = await queryWithRetry(
+    `INSERT INTO messages (content, author_token)
+     VALUES ($1, $2)
+     RETURNING id, content, author_token AS "authorToken", created_at AS "createdAt"`,
+    [content, authorToken],
+    { retries: 2 }
+  );
 
-    return result.rows[0];
-  } catch (error) {
-    if (shouldUseMemoryFallback(error)) {
-      logDbFallback('createMessage', error);
-      return createMemoryMessage(content, authorToken);
-    }
-
-    throw error;
-  }
+  return result.rows[0];
 }
