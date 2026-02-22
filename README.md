@@ -35,11 +35,13 @@ POSTGRES_DATABASE="neon-charcoal-kite"
 IP_SALT="choose-a-random-secret-string"
 ```
 
-3. Initialize database schema:
+3. (Optional) Initialize database schema ahead of time:
 
 ```bash
 npm run db:init
 ```
+
+   The app also auto-creates the `messages` table and index on first request.
 
 4. Start the app:
 
@@ -70,7 +72,8 @@ npm run db:init
 
 ## Behavior
 
-- Messages are persisted in Postgres in production; memory fallback is only used in non-production environments.
+- Messages are always stored in Postgres; the app fails fast when database configuration is missing.
+- The app auto-creates the `messages` table/index on first read/write and retries transient database errors.
 - Messages are returned in chronological order (`created_at ASC, id ASC`) for consistent ordering.
 - Each message displays a Pacific time timestamp (`America/Los_Angeles`) with date and time.
 - No login is required.

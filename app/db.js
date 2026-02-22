@@ -19,19 +19,94 @@ function getConnectionString() {
 }
 
 const globalForDb = globalThis;
+const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS messages (
+    id BIGSERIAL PRIMARY KEY,
+    content VARCHAR(500) NOT NULL,
+    author_token VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+`;
 
 function createPool() {
   const connectionString = getConnectionString();
 
   if (!connectionString) {
-    return null;
+    throw new Error(
+      'Database connection is not configured. Set POSTGRES_URL (or DATABASE_URL), or POSTGRES_HOST/POSTGRES_USER/POSTGRES_PASSWORD.'
+    );
   }
 
-  return new Pool({ connectionString });
+  const pool = new Pool({
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+    maxUses: 7_500
+  });
+
+  pool.on('error', (error) => {
+    console.error('[db] Unexpected PostgreSQL pool error.', {
+      code: error?.code,
+      message: error?.message
+    });
+  });
+
+  return pool;
 }
 
-export const pool = globalForDb.__murphyPool ?? createPool();
+export function getPool() {
+  if (!globalForDb.__murphyPool) {
+    globalForDb.__murphyPool = createPool();
+  }
 
-if (!globalForDb.__murphyPool) {
-  globalForDb.__murphyPool = pool;
+  return globalForDb.__murphyPool;
+}
+
+const transientPgCodes = new Set(['40001', '40P01', '53300', '57P01', '57P02', '57P03']);
+
+function isTransientError(error) {
+  return transientPgCodes.has(error?.code) || ['ECONNRESET', 'ETIMEDOUT', 'EPIPE'].includes(error?.code);
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function queryWithRetry(text, values = [], options = {}) {
+  const retries = options.retries ?? 2;
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await getPool().query(text, values);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === retries || !isTransientError(error)) {
+        break;
+      }
+
+      const backoffMs = 120 * 2 ** attempt;
+      await delay(backoffMs);
+    }
+  }
+
+  throw lastError;
+}
+
+let schemaPromise = globalForDb.__murphySchemaPromise;
+
+export async function ensureSchema() {
+  if (!schemaPromise) {
+    schemaPromise = queryWithRetry(SCHEMA_SQL, [], { retries: 3 }).catch((error) => {
+      schemaPromise = null;
+      throw error;
+    });
+    globalForDb.__murphySchemaPromise = schemaPromise;
+  }
+
+  await schemaPromise;
 }
