@@ -47,8 +47,10 @@ body {
 .title {
   margin: 0;
   font-size: clamp(1.2rem, 3.6vw, 1.7rem);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.01em;
+  color: #f2a9c4;
+  font-family: 'Snell Roundhand', 'Segoe Script', 'Brush Script MT', 'Apple Chancery', cursive;
 }
 
 .instructions {
