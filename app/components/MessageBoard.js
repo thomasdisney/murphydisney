@@ -13,12 +13,19 @@ function formatPacificDateTime(value) {
     return 'Unknown time';
   }
 
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Los_Angeles',
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZoneName: 'short'
-  }).format(date);
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    }).format(date);
+  } catch {
+    return date.toLocaleString('en-US');
+  }
 }
 
 export default function MessageBoard({ initialMessages, viewerToken }) {
