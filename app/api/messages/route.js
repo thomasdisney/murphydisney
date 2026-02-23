@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createMessage, listMessages } from '@/app/store';
-import { getClientIp, makeAuthorToken } from '@/app/lib';
+import { getClientIp, getClientLocation, makeAuthorToken } from '@/app/lib';
 
 export async function GET() {
   const messages = await listMessages();
@@ -24,7 +24,8 @@ export async function POST(request) {
 
   const ip = getClientIp(request);
   const authorToken = makeAuthorToken(ip);
-  const message = await createMessage(content, authorToken);
+  const location = getClientLocation(request);
+  const message = await createMessage(content, authorToken, location);
 
   return NextResponse.json({ message }, { status: 201 });
 }

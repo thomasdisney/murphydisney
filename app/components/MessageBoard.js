@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-function safeTrim(value) {
-  return value.replace(/\s+/g, ' ').trim();
+function normalizeMessage(value) {
+  return value.replace(/\r\n?/g, '\n').trim();
 }
 
 function formatPacificDateTime(value) {
@@ -76,14 +76,14 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
     };
   }, []);
 
-  const canPost = useMemo(() => safeTrim(text).length > 0 && text.length <= 500, [text]);
+  const canPost = useMemo(() => normalizeMessage(text).length > 0 && text.length <= 500, [text]);
 
   const submitMessage = async (event) => {
     event.preventDefault();
 
     if (!canPost || posting) return;
 
-    const trimmed = safeTrim(text);
+    const trimmed = normalizeMessage(text);
     setPosting(true);
 
     try {
@@ -125,6 +125,11 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
               <div className={`bubbleRow ${isSelf ? 'self' : ''}`} key={message.id}>
                 <div className={`bubble ${isSelf ? 'self' : 'other'}`}>
                   <p>{message.content}</p>
+                  {message.city || message.state ? (
+                    <small>
+                      {[message.city, message.state].filter(Boolean).join(', ')}
+                    </small>
+                  ) : null}
                   <small>{formatPacificDateTime(message.createdAt)}</small>
                 </div>
               </div>
@@ -135,10 +140,9 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
 
       <div className="composerWrap">
         <form className="composer" onSubmit={submitMessage}>
-          <input
+          <textarea
             ref={inputRef}
             className="input"
-            type="text"
             placeholder="Type your message..."
             maxLength={500}
             value={text}
@@ -147,6 +151,7 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
             autoComplete="off"
             autoFocus
             inputMode="text"
+            rows={2}
           />
           <button className="button" type="submit" disabled={!canPost || posting}>
             {posting ? '...' : 'Post'}
