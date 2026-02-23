@@ -38,7 +38,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 0.8rem 1rem 0.7rem;
+  padding: 0.95rem 1rem 0.8rem;
   backdrop-filter: blur(12px);
   background: var(--header-bg);
   border-bottom: 1px solid var(--border);
@@ -46,11 +46,13 @@ body {
 
 .title {
   margin: 0;
-  font-size: clamp(1.2rem, 3.6vw, 1.7rem);
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: #f2a9c4;
-  font-family: 'Snell Roundhand', 'Segoe Script', 'Brush Script MT', 'Apple Chancery', cursive;
+  font-size: clamp(1.8rem, 5vw, 2.45rem);
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  line-height: 1.05;
+  color: #cc7fa4;
+  font-family: 'Palatino', 'Palatino Linotype', 'Book Antiqua', 'Times New Roman', serif;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .instructions {
