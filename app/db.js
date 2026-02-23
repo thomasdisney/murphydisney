@@ -27,8 +27,13 @@ const SCHEMA_SQL = `
     id BIGSERIAL PRIMARY KEY,
     content VARCHAR(500) NOT NULL,
     author_token VARCHAR(64) NOT NULL,
+    city VARCHAR(80),
+    state VARCHAR(80),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
+
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS city VARCHAR(80);
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS state VARCHAR(80);
 
   CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 `;

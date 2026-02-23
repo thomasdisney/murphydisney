@@ -1,5 +1,22 @@
 import crypto from 'crypto';
 
+function cleanHeaderValue(value, maxLength = 80) {
+  if (!value || typeof value !== 'string') return null;
+
+  let decoded = value;
+
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    decoded = value;
+  }
+
+  const cleaned = decoded.replace(/\s+/g, ' ').trim();
+  if (!cleaned) return null;
+
+  return cleaned.slice(0, maxLength);
+}
+
 export function getClientIp(request) {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
@@ -12,6 +29,13 @@ export function getClientIp(request) {
   }
 
   return 'unknown';
+}
+
+export function getClientLocation(request) {
+  const city = cleanHeaderValue(request.headers.get('x-vercel-ip-city'));
+  const state = cleanHeaderValue(request.headers.get('x-vercel-ip-country-region'));
+
+  return { city, state };
 }
 
 export function makeAuthorToken(ip) {

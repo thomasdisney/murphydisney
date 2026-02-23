@@ -153,8 +153,11 @@ body {
   border-radius: 1.1rem;
   padding: 0.75rem 0.9rem;
   font-size: 1rem;
+  line-height: 1.35;
   outline: none;
   background: white;
+  resize: none;
+  min-height: 2.8rem;
 }
 
 .input:focus {
