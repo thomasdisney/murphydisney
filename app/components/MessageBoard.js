@@ -139,25 +139,27 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
       </header>
 
       <main className="feed" ref={feedRef}>
-        <div className="messages">
-          {messages.length === 0 ? <p className="empty">Be the first to leave a message 💙</p> : null}
+        <div className="messageViewport">
+          <div className="messages">
+            {messages.length === 0 ? <p className="empty">Be the first to leave a message 💙</p> : null}
 
-          {messages.map((message) => {
-            const isSelf = message.authorToken === viewerToken;
-            const label = formatMessageLabel(message);
+            {messages.map((message) => {
+              const isSelf = message.authorToken === viewerToken;
+              const label = formatMessageLabel(message);
 
-            return (
-              <div className={`bubbleRow ${isSelf ? 'self' : ''}`} key={message.id}>
-                <div className={`bubble ${isSelf ? 'self' : 'other'}`}>
-                  <p>{message.content}</p>
-                  <div className="meta">
-                    {label ? <small className="metaDevice">{label}</small> : null}
-                    <small className="metaTimestamp">{formatMessageDateTime(message.createdAt)}</small>
+              return (
+                <div className={`bubbleRow ${isSelf ? 'self' : ''}`} key={message.id}>
+                  <div className={`bubble ${isSelf ? 'self' : 'other'}`}>
+                    <p>{message.content}</p>
+                    <div className="meta">
+                      {label ? <small className="metaDevice">{label}</small> : null}
+                      <small className="metaTimestamp">{formatMessageDateTime(message.createdAt)}</small>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </main>
 
