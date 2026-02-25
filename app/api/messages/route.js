@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createMessage, listMessages } from '@/app/store';
-import { getClientIp, getClientLocation, makeAuthorToken } from '@/app/lib';
+import { getClientIp, getClientLocation, getDeviceInfo, makeAuthorToken } from '@/app/lib';
 
 export async function GET() {
   const messages = await listMessages();
@@ -25,7 +25,16 @@ export async function POST(request) {
   const ip = getClientIp(request);
   const authorToken = makeAuthorToken(ip);
   const location = getClientLocation(request);
-  const message = await createMessage(content, authorToken, location);
+  const device = getDeviceInfo(request);
+  const createdAt = new Date().toISOString();
+
+  const message = await createMessage(content, authorToken, {
+    city: location.city,
+    region: location.region,
+    userAgent: device.userAgent,
+    deviceLabel: device.isIphone ? 'iPhone' : 'Device',
+    createdAt
+  });
 
   return NextResponse.json({ message }, { status: 201 });
 }

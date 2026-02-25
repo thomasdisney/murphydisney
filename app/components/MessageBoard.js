@@ -6,7 +6,7 @@ function normalizeMessage(value) {
   return value.replace(/\r\n?/g, '\n').trim();
 }
 
-function formatPacificDateTime(value) {
+function formatMessageDateTime(value) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -14,18 +14,41 @@ function formatPacificDateTime(value) {
   }
 
   try {
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Los_Angeles',
+    const datePart = new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+
+    const timePart = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+      .format(date)
+      .replace(' AM', 'am')
+      .replace(' PM', 'pm');
+
+    return `${datePart} at ${timePart}`;
+  } catch {
+    return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    }).format(date);
-  } catch {
-    return date.toLocaleString('en-US');
+      minute: '2-digit'
+    });
   }
+}
+
+function formatMessageLabel(message) {
+  const location = [message.city, message.region].filter(Boolean).join(', ');
+  if (!location) {
+    return null;
+  }
+
+  const device = message.deviceLabel || 'Device';
+  return `${device} in ${location}`;
 }
 
 export default function MessageBoard({ initialMessages, viewerToken }) {
@@ -121,16 +144,16 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
 
           {messages.map((message) => {
             const isSelf = message.authorToken === viewerToken;
+            const label = formatMessageLabel(message);
+
             return (
               <div className={`bubbleRow ${isSelf ? 'self' : ''}`} key={message.id}>
                 <div className={`bubble ${isSelf ? 'self' : 'other'}`}>
                   <p>{message.content}</p>
-                  {message.city || message.state ? (
-                    <small>
-                      {[message.city, message.state].filter(Boolean).join(', ')}
-                    </small>
-                  ) : null}
-                  <small>{formatPacificDateTime(message.createdAt)}</small>
+                  <div className="meta">
+                    {label ? <small className="metaDevice">{label}</small> : null}
+                    <small className="metaTimestamp">{formatMessageDateTime(message.createdAt)}</small>
+                  </div>
                 </div>
               </div>
             );

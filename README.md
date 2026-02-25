@@ -79,6 +79,12 @@ npm run db:init
 - Messages are always stored in Postgres; the app fails fast when database configuration is missing.
 - The app auto-creates the `messages` table/index on first read/write, uses IPv4-first DNS resolution, and retries transient database/network errors.
 - Messages are returned in chronological order (`created_at ASC, id ASC`) for consistent ordering.
-- Each message displays a Pacific time timestamp (`America/Los_Angeles`) with date and time.
+- Each message stores request metadata in Postgres (`city`, `region`, `user_agent`, `device_label`, `created_at`) and shows an iMessage-style label (`iPhone in City, Region`) on its own line above the timestamp.
+- Timestamps display in 12-hour format as `Mon D, YYYY at h:mm` (with lowercase am/pm) to match iOS-style compact message metadata.
 - No login is required.
 - Message color alignment is inferred from hashed IP token (best effort).
+
+## Deployment notes
+
+- This project uses `@vercel/functions` geolocation API on the server (`geolocation(request)`) and falls back to Vercel geo headers when needed.
+- Schema migration is self-contained in `app/db.js` (`ensureSchema`), so merging to `main` and deploying runs with no manual SQL steps.

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { geolocation } from '@vercel/functions';
 
 function cleanHeaderValue(value, maxLength = 80) {
   if (!value || typeof value !== 'string') return null;
@@ -32,10 +33,18 @@ export function getClientIp(request) {
 }
 
 export function getClientLocation(request) {
-  const city = cleanHeaderValue(request.headers.get('x-vercel-ip-city'));
-  const state = cleanHeaderValue(request.headers.get('x-vercel-ip-country-region'));
+  const location = geolocation(request);
+  const city = cleanHeaderValue(location?.city || request.headers.get('x-vercel-ip-city'));
+  const region = cleanHeaderValue(location?.region || request.headers.get('x-vercel-ip-country-region'));
 
-  return { city, state };
+  return { city, region };
+}
+
+export function getDeviceInfo(request) {
+  const userAgent = cleanHeaderValue(request.headers.get('user-agent'), 512);
+  const isIphone = Boolean(userAgent && /iPhone/i.test(userAgent));
+
+  return { userAgent, isIphone };
 }
 
 export function makeAuthorToken(ip) {
