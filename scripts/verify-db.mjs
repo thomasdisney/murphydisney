@@ -9,16 +9,30 @@ try {
 
   const marker = `verification-${Date.now()}`;
   const insertResult = await queryWithRetry(
-    `INSERT INTO messages (content, author_token)
-     VALUES ($1, $2)
-     RETURNING id, content, author_token AS "authorToken", created_at AS "createdAt"`,
-    [marker, 'db-verifier']
+    `INSERT INTO messages (content, author_token, city, region, user_agent, device_label)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id,
+               content,
+               author_token AS "authorToken",
+               city,
+               region,
+               user_agent AS "userAgent",
+               device_label AS "deviceLabel",
+               created_at AS "createdAt"`,
+    [marker, 'db-verifier', 'San Francisco', 'California', 'Mozilla/5.0 (iPhone)', 'iPhone']
   );
 
   const inserted = insertResult.rows[0];
 
   const readResult = await queryWithRetry(
-    `SELECT id, content, author_token AS "authorToken", created_at AS "createdAt"
+    `SELECT id,
+            content,
+            author_token AS "authorToken",
+            city,
+            region,
+            user_agent AS "userAgent",
+            device_label AS "deviceLabel",
+            created_at AS "createdAt"
      FROM messages
      WHERE id = $1`,
     [inserted.id]
@@ -38,7 +52,9 @@ try {
   console.log('Database verification passed.', {
     table: tableCheck.rows[0]?.table_name,
     index: tableCheck.rows[0]?.index_name,
-    sampleMessageId: inserted.id
+    sampleMessageId: inserted.id,
+    sampleRegion: inserted.region,
+    sampleDevice: inserted.deviceLabel
   });
 } catch (error) {
   try {

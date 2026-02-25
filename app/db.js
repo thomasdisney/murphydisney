@@ -28,12 +28,31 @@ const SCHEMA_SQL = `
     content VARCHAR(500) NOT NULL,
     author_token VARCHAR(64) NOT NULL,
     city VARCHAR(80),
-    state VARCHAR(80),
+    region VARCHAR(80),
+    user_agent VARCHAR(512),
+    device_label VARCHAR(40),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
   ALTER TABLE messages ADD COLUMN IF NOT EXISTS city VARCHAR(80);
-  ALTER TABLE messages ADD COLUMN IF NOT EXISTS state VARCHAR(80);
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS region VARCHAR(80);
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS user_agent VARCHAR(512);
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS device_label VARCHAR(40);
+  ALTER TABLE messages ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+  DO $$
+  BEGIN
+    IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'messages'
+        AND column_name = 'state'
+    ) THEN
+      EXECUTE 'UPDATE messages SET region = COALESCE(region, state)';
+      EXECUTE 'ALTER TABLE messages DROP COLUMN state';
+    END IF;
+  END $$;
 
   CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 `;
