@@ -54,25 +54,58 @@ body {
 }
 
 .sceneHeader {
-  text-align: center;
-  margin: 0 auto 1rem;
-  max-width: 40rem;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 1.2rem;
+}
+
+.namePlateWrap {
+  width: min(100%, 760px);
+  position: relative;
+  padding-top: 0.8rem;
 }
 
 .title {
   margin: 0;
-  font-size: clamp(1.25rem, 5vw, 2.15rem);
+  text-align: center;
+  font-size: clamp(2rem, 9vw, 3.5rem);
+  font-family: 'Brush Script MT', 'Lucida Handwriting', 'Apple Chancery', cursive;
+  font-weight: 400;
   letter-spacing: 0.03em;
-  color: #bad5ea;
-  text-shadow: 0 0 18px rgba(89, 157, 212, 0.35);
+  color: #ff93cc;
+  text-shadow: 0 0 20px rgba(255, 131, 201, 0.55), 0 8px 15px rgba(8, 18, 34, 0.7);
+  position: relative;
+  z-index: 2;
+  transform: translateY(0.5rem);
 }
 
-.instructions {
-  margin: 0.55rem 0 0;
-  color: #99adba;
-  opacity: 0.82;
-  font-size: 0.85rem;
-  line-height: 1.5;
+.metalPlate {
+  margin: -0.25rem auto 0;
+  min-height: 3.6rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(223, 234, 242, 0.35);
+  background: linear-gradient(
+    160deg,
+    rgba(196, 206, 214, 0.44) 0%,
+    rgba(110, 122, 134, 0.72) 24%,
+    rgba(166, 178, 188, 0.55) 48%,
+    rgba(95, 107, 119, 0.78) 72%,
+    rgba(184, 195, 204, 0.5) 100%
+  );
+  box-shadow: inset 0 2px 5px rgba(241, 249, 255, 0.2), inset 0 -3px 9px rgba(22, 30, 37, 0.65), 0 10px 20px rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 0.65rem 1rem;
+}
+
+.etchedQuote {
+  margin: 0;
+  text-align: center;
+  color: rgba(48, 60, 71, 0.95);
+  font-size: clamp(0.68rem, 2.6vw, 0.9rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(217, 225, 231, 0.28), 0 -1px 0 rgba(32, 42, 51, 0.65);
 }
 
 .monitorSection {
@@ -200,55 +233,88 @@ body {
   transform: translateX(-50%);
   width: min(980px, 100vw);
   padding: 0.7rem 0.85rem calc(0.7rem + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, rgba(7, 16, 24, 0.97), rgba(7, 16, 24, 0.84));
-  border-top: 1px solid rgba(124, 151, 171, 0.3);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(to top, rgba(224, 230, 235, 0.98), rgba(201, 209, 217, 0.95));
+  border-top: 1px solid rgba(125, 139, 151, 0.5);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .composer {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 0.55rem;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.inputShell {
+  position: relative;
+  border-radius: 1.2rem;
+  background: #fff;
+  border: 1px solid rgba(113, 125, 136, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 1px rgba(0, 0, 0, 0.15);
+  padding: 0.55rem 0.8rem;
 }
 
 .input {
   width: 100%;
-  border: 1px solid rgba(126, 160, 184, 0.45);
-  border-radius: 0.85rem;
-  padding: 0.7rem 0.82rem;
-  font: inherit;
-  font-size: 0.92rem;
-  line-height: 1.4;
-  color: #d9f4ff;
-  background: rgba(12, 34, 48, 0.86);
+  border: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: #1e2a33;
+  background: transparent;
   resize: none;
   outline: none;
+  min-height: 2.2rem;
 }
 
-.input:focus {
-  border-color: rgba(130, 227, 255, 0.8);
-  box-shadow: 0 0 0 3px rgba(130, 227, 255, 0.16);
+.inputShell.empty .input {
+  caret-color: transparent;
 }
 
-.input::placeholder {
-  color: rgba(161, 194, 211, 0.68);
+.ghostCursor {
+  position: absolute;
+  left: 0.8rem;
+  top: 0.65rem;
+  width: 2px;
+  height: 1.15rem;
+  background: #0a84ff;
+  animation: blink-cursor 900ms steps(1) infinite;
+  pointer-events: none;
 }
 
 .button {
-  border: 1px solid rgba(134, 219, 239, 0.55);
-  border-radius: 0.8rem;
-  padding: 0 0.95rem;
-  min-width: 5.6rem;
-  color: #d4f7ff;
-  background: linear-gradient(145deg, rgba(39, 97, 116, 0.95), rgba(23, 56, 79, 0.95));
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font: inherit;
-  font-size: 0.76rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: none;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 132, 255, 0.3);
+  color: #ffffff;
+  padding: 0;
+  opacity: 0;
+  transform: scale(0.88);
+  transition: opacity 180ms ease, transform 180ms ease, background-color 180ms ease;
+  pointer-events: none;
+}
+
+.button.active {
+  opacity: 1;
+  transform: scale(1);
+  background: #0a84ff;
+  pointer-events: auto;
 }
 
 .button:disabled {
-  opacity: 0.55;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sendArrow {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  transform: translateY(-1px);
 }
 
 @keyframes fade-log {
@@ -274,9 +340,28 @@ body {
   }
 }
 
+@keyframes blink-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (min-width: 760px) {
   .appShell {
     padding-top: 1.6rem;
+  }
+
+  .namePlateWrap {
+    padding-top: 1.2rem;
+  }
+
+  .metalPlate {
+    min-height: 4rem;
   }
 
   .monitorBezel {
@@ -287,10 +372,6 @@ body {
     min-height: 560px;
     max-height: 560px;
     padding: 1rem;
-  }
-
-  .instructions {
-    font-size: 0.92rem;
   }
 
   .logContent {

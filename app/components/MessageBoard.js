@@ -133,8 +133,12 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
       <div className="vignette" aria-hidden="true" />
 
       <header className="sceneHeader">
-        <h1 className="title">MurphyDisney Transmission Wall</h1>
-        <p className="instructions">Delayed messages from home, preserved in order. Hold the line. Keep sending.</p>
+        <div className="namePlateWrap">
+          <h1 className="title">Murphy Disney</h1>
+          <div className="metalPlate" aria-hidden="true">
+            <p className="etchedQuote">Rage, rage against the dying of the light.</p>
+          </div>
+        </div>
       </header>
 
       <main className="monitorSection">
@@ -176,21 +180,27 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
 
       <div className="composerWrap">
         <form className="composer" onSubmit={submitMessage}>
-          <textarea
-            ref={inputRef}
-            className="input"
-            placeholder="Record your transmission..."
-            maxLength={500}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            aria-label="Message"
-            autoComplete="off"
-            autoFocus
-            inputMode="text"
-            rows={2}
-          />
-          <button className="button" type="submit" disabled={!canPost || posting}>
-            {posting ? 'Sending...' : 'Transmit'}
+          <div className={`inputShell ${text.length === 0 ? 'empty' : ''}`}>
+            <textarea
+              ref={inputRef}
+              className="input"
+              placeholder=""
+              maxLength={500}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              aria-label="Message"
+              autoComplete="off"
+              autoFocus
+              inputMode="text"
+              rows={2}
+            />
+            {text.length === 0 ? <span className="ghostCursor" aria-hidden="true" /> : null}
+          </div>
+
+          <button className={`button ${canPost ? 'active' : ''}`} type="submit" disabled={!canPost || posting} aria-label="Send message">
+            <span className="sendArrow" aria-hidden="true">
+              ↑
+            </span>
           </button>
         </form>
       </div>
