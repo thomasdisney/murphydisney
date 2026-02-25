@@ -6,37 +6,35 @@ function normalizeMessage(value) {
   return value.replace(/\r\n?/g, '\n').trim();
 }
 
-function formatMessageDateTime(value) {
+function toValidDate(value) {
   const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-  if (Number.isNaN(date.getTime())) {
+function formatLogTimestamp(value) {
+  const date = toValidDate(value);
+
+  if (!date) {
     return 'Unknown time';
   }
 
   try {
-    const datePart = new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
-    }).format(date);
-
-    const timePart = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
-    })
-      .format(date)
-      .replace(' AM', 'am')
-      .replace(' PM', 'pm');
-
-    return `${datePart} at ${timePart}`;
+    }).format(date);
   } catch {
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: true
     });
   }
 }
@@ -51,25 +49,23 @@ function formatMessageLabel(message) {
   return `${device} in ${location}`;
 }
 
+function getElapsedYears(fromValue, toValue) {
+  const from = toValidDate(fromValue);
+  const to = toValidDate(toValue);
+
+  if (!from || !to || to <= from) {
+    return 0;
+  }
+
+  return Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+}
+
 export default function MessageBoard({ initialMessages, viewerToken }) {
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
-  const [compactHeader, setCompactHeader] = useState(false);
   const feedRef = useRef(null);
   const inputRef = useRef(null);
-
-  useEffect(() => {
-    const feed = feedRef.current;
-    if (!feed) return;
-
-    const handleScroll = () => {
-      setCompactHeader(feed.scrollTop > 14);
-    };
-
-    feed.addEventListener('scroll', handleScroll);
-    return () => feed.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const feed = feedRef.current;
@@ -129,55 +125,82 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
     }
   };
 
+  const firstMessageAt = messages[0]?.createdAt || null;
+
   return (
     <div className="appShell">
-      <header className={`header ${compactHeader ? 'compact' : ''}`}>
-        <h1 className="title">MurphyDisney.com</h1>
-        <p className="instructions">
-          type & send a message for Murphy. no edits, no take-backs. don't forget your name.
-        </p>
+      <div className="spaceBackdrop" aria-hidden="true" />
+      <div className="vignette" aria-hidden="true" />
+
+      <header className="sceneHeader">
+        <div className="namePlateWrap">
+          <h1 className="title">Murphy Disney</h1>
+          <div className="metalPlate" aria-hidden="true">
+            <p className="etchedQuote">Rage, rage against the dying of the light.</p>
+          </div>
+        </div>
       </header>
 
-      <main className="feed" ref={feedRef}>
-        <div className="messages">
-          {messages.length === 0 ? <p className="empty">Be the first to leave a message 💙</p> : null}
+      <main className="monitorSection">
+        <section className="monitorFrame" aria-label="Message monitor">
+          <div className="monitorBezel">
+            <div className="screenGlow" />
+            <div className="monitorScreen" ref={feedRef}>
+              <div className="scanlines" aria-hidden="true" />
+              <div className="staticNoise" aria-hidden="true" />
 
-          {messages.map((message) => {
-            const isSelf = message.authorToken === viewerToken;
-            const label = formatMessageLabel(message);
+              <div className="messageLogs">
+                {messages.length === 0 ? <p className="empty">No transmissions yet. Be the first signal.</p> : null}
 
-            return (
-              <div className={`bubbleRow ${isSelf ? 'self' : ''}`} key={message.id}>
-                <div className={`bubble ${isSelf ? 'self' : 'other'}`}>
-                  <p>{message.content}</p>
-                  <div className="meta">
-                    {label ? <small className="metaDevice">{label}</small> : null}
-                    <small className="metaTimestamp">{formatMessageDateTime(message.createdAt)}</small>
-                  </div>
-                </div>
+                {messages.map((message, index) => {
+                  const isSelf = message.authorToken === viewerToken;
+                  const label = formatMessageLabel(message);
+                  const elapsedYears = getElapsedYears(firstMessageAt, message.createdAt);
+
+                  return (
+                    <article
+                      key={message.id}
+                      className={`logEntry ${isSelf ? 'self' : ''}`}
+                      style={{ animationDelay: `${Math.min(index * 120, 1400)}ms` }}
+                    >
+                      <p className="logMeta">
+                        <span className="logTimestamp">[{formatLogTimestamp(message.createdAt)}]</span>
+                        {elapsedYears > 0 ? <span className="elapsedYears">+{elapsedYears}y drift</span> : null}
+                      </p>
+                      <p className="logContent">{message.content}</p>
+                      {label ? <p className="logLabel">{label}</p> : null}
+                    </article>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <div className="composerWrap">
         <form className="composer" onSubmit={submitMessage}>
-          <textarea
-            ref={inputRef}
-            className="input"
-            placeholder="Type your message..."
-            maxLength={500}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            aria-label="Message"
-            autoComplete="off"
-            autoFocus
-            inputMode="text"
-            rows={2}
-          />
-          <button className="button" type="submit" disabled={!canPost || posting}>
-            {posting ? '...' : 'Post'}
+          <div className={`inputShell ${text.length === 0 ? 'empty' : ''}`}>
+            <textarea
+              ref={inputRef}
+              className="input"
+              placeholder=""
+              maxLength={500}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              aria-label="Message"
+              autoComplete="off"
+              autoFocus
+              inputMode="text"
+              rows={2}
+            />
+            {text.length === 0 ? <span className="ghostCursor" aria-hidden="true" /> : null}
+          </div>
+
+          <button className={`button ${canPost ? 'active' : ''}`} type="submit" disabled={!canPost || posting} aria-label="Send message">
+            <span className="sendArrow" aria-hidden="true">
+              ↑
+            </span>
           </button>
         </form>
       </div>
