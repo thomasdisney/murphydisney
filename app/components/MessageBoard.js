@@ -55,21 +55,8 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState('');
   const [posting, setPosting] = useState(false);
-  const [compactHeader, setCompactHeader] = useState(false);
   const feedRef = useRef(null);
   const inputRef = useRef(null);
-
-  useEffect(() => {
-    const feed = feedRef.current;
-    if (!feed) return;
-
-    const handleScroll = () => {
-      setCompactHeader(feed.scrollTop > 14);
-    };
-
-    feed.addEventListener('scroll', handleScroll);
-    return () => feed.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const feed = feedRef.current;
@@ -79,9 +66,16 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
   }, [messages.length]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 120);
+    const focusInput = () => {
+      const input = inputRef.current;
+      if (!input) return;
+
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(input.value.length, input.value.length);
+    };
+
+    const timer = setTimeout(focusInput, 120);
+    const raf = requestAnimationFrame(focusInput);
 
     const handleViewportResize = () => {
       inputRef.current?.scrollIntoView({ block: 'nearest' });
@@ -93,6 +87,7 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
 
     return () => {
       clearTimeout(timer);
+      cancelAnimationFrame(raf);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleViewportResize);
       }
@@ -100,6 +95,7 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
   }, []);
 
   const canPost = useMemo(() => normalizeMessage(text).length > 0 && text.length <= 500, [text]);
+  const showSubmit = text.length > 0;
 
   const submitMessage = async (event) => {
     event.preventDefault();
@@ -131,7 +127,7 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
 
   return (
     <div className="appShell">
-      <header className={`header ${compactHeader ? 'compact' : ''}`}>
+      <header className="header">
         <h1 className="title">MurphyDisney.com</h1>
         <p className="instructions">
           type & send a message for Murphy. no edits, no take-backs. don't forget your name.
@@ -163,22 +159,28 @@ export default function MessageBoard({ initialMessages, viewerToken }) {
 
       <div className="composerWrap">
         <form className="composer" onSubmit={submitMessage}>
-          <textarea
-            ref={inputRef}
-            className="input"
-            placeholder="Type your message..."
-            maxLength={500}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            aria-label="Message"
-            autoComplete="off"
-            autoFocus
-            inputMode="text"
-            rows={2}
-          />
-          <button className="button" type="submit" disabled={!canPost || posting}>
-            {posting ? '...' : 'Post'}
-          </button>
+          <div className="inputWrap">
+            <input
+              ref={inputRef}
+              className="input"
+              placeholder=""
+              maxLength={500}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              aria-label="Message"
+              autoComplete="off"
+              autoFocus
+              inputMode="text"
+              type="text"
+              enterKeyHint="send"
+            />
+            {!text ? <span className="fakeCursor" aria-hidden="true" /> : null}
+          </div>
+          {showSubmit ? (
+            <button className="button iconButton" type="submit" disabled={!canPost || posting} aria-label="Post message">
+              {posting ? '…' : '↑'}
+            </button>
+          ) : null}
         </form>
       </div>
     </div>
